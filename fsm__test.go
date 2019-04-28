@@ -12,7 +12,7 @@ func TestNew(t *testing.T) {
 		name string
 		want *stateMachine
 	}{
-		{"new", &stateMachine{processor: NoopProcessor, sg: &stateGraph{transitions: map[State]map[Event]*Transition{}}}},
+		{"new", &stateMachine{processor: nil, sg: &stateGraph{transitions: map[State]map[Event]*Transition{}}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -84,7 +84,6 @@ func Test_stateMachine_States(t *testing.T) {
 	}{
 		{"Empty", args{nil}, New("")},
 		{"Has States", args{StatesDef{"a": "a", "b": "b"}}, &stateMachine{
-			processor: NoopProcessor,
 			sg: &stateGraph{
 				states:      StatesDef{"a": "a", "b": "b"},
 				transitions: map[State]map[Event]*Transition{},
@@ -112,7 +111,6 @@ func Test_stateMachine_Events(t *testing.T) {
 	}{
 		{"Empty", args{nil}, New("")},
 		{"Has Events", args{EventsDef{"a": "a", "b": "b"}}, &stateMachine{
-			processor: NoopProcessor,
 			sg: &stateGraph{
 				events:      EventsDef{"a": "a", "b": "b"},
 				transitions: map[State]map[Event]*Transition{},
