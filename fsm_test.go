@@ -3,6 +3,7 @@ package gofsm_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/threeq/gofaker"
 	"github.com/threeq/gofsm"
 	"reflect"
@@ -177,6 +178,106 @@ func Test_stateMachine_Trigger(t *testing.T) {
 			}
 		})
 	}
+}
+
+type OrderEventProcessor struct{}
+
+func (*OrderEventProcessor) OnExit(ctx context.Context, state gofsm.State, event gofsm.Event) error {
+	println(fmt.Sprintf("OnExit: [%v] Exit [%v] on event [%v]", ctx.Value("data"), state, event))
+	return nil
+}
+
+func (*OrderEventProcessor) OnActionFailure(ctx context.Context, from gofsm.State, event gofsm.Event, to []gofsm.State, err error) error {
+	println(fmt.Sprintf("OnActionFailure: [%v] do action error %v --%v--> %v", ctx.Value("data"), from, event, to))
+	return nil
+}
+
+func (*OrderEventProcessor) OnEnter(ctx context.Context, state gofsm.State) error {
+	println(fmt.Sprintf("OnEnter: [%v] Enter [%v]", ctx.Value("data"), state))
+	return nil
+}
+
+func TestStateMachine_Example_Order(t *testing.T) {
+	// 订单状态定义
+	const (
+		Start       = "Start"
+		WaitPay     = "WaitPay"
+		Paying      = "Paying"
+		WaitSend    = "WaitSend"
+		Sending     = "Sending"
+		WaitConfirm = "WaitConfirm"
+		Received    = "Received"
+		PayFailure  = "PayFailure"
+		Canceled    = "Canceled"
+	)
+
+	// 订单时间定义
+	const (
+		CreateEvent          = "Create"
+		PayEvent             = "Pay"
+		PaySuccessEvent      = "PaySuccess"
+		PayFailureEvent      = "PayFailure"
+		SendStartEvent       = "SendStart"
+		SendEndEvent         = "SendEnd"
+		ConfirmReceivedEvent = "SendConfirm"
+		CancelEvent          = "Cancel"
+	)
+
+	doAction := func(ctx context.Context, from gofsm.State, event gofsm.Event, to []gofsm.State) (state gofsm.State, e error) {
+		println(fmt.Sprintf("doAction: [%v] --%s--> %v", ctx.Value("data"), event, to))
+		return to[0], nil
+	}
+
+	orderStateMachine := gofsm.New("myStateMachine").
+		States(gofsm.StatesDef{
+			Start:       "开始",
+			WaitPay:     "待支付",
+			Paying:      "支付中",
+			WaitSend:    "待发货",
+			Sending:     "运输中",
+			WaitConfirm: "已收货",
+			Received:    "已收货",
+			PayFailure:  "支付失败",
+			Canceled:    "已取消",
+		}).
+		Start([]gofsm.State{Start}).
+		End([]gofsm.State{Received, Canceled}).
+		Events(gofsm.EventsDef{
+			CreateEvent:          "创建订单",
+			PayEvent:             "支付",
+			PaySuccessEvent:      "支付成功",
+			PayFailureEvent:      "支付失败",
+			SendStartEvent:       "发货",
+			SendEndEvent:         "送达",
+			ConfirmReceivedEvent: "确认收货",
+			CancelEvent:          "去掉订单",
+		}).
+		Transitions([]gofsm.Transition{
+			{Start, CreateEvent, []gofsm.State{WaitPay}, doAction, nil},
+			{WaitPay, PayEvent, []gofsm.State{Paying}, doAction, nil},
+			{WaitPay, CancelEvent, []gofsm.State{Canceled}, doAction, nil},
+			{Paying, PaySuccessEvent, []gofsm.State{WaitSend}, doAction, nil},
+			{Paying, PayFailureEvent, []gofsm.State{PayFailure}, doAction, nil},
+			{PayFailure, PayEvent, []gofsm.State{Paying}, doAction, nil},
+			{PayFailure, CancelEvent, []gofsm.State{Canceled}, doAction, nil},
+			{WaitSend, SendStartEvent, []gofsm.State{Sending}, doAction, nil},
+			{Sending, SendEndEvent, []gofsm.State{WaitConfirm}, doAction, nil},
+			{WaitConfirm, ConfirmReceivedEvent, []gofsm.State{Received}, doAction, nil},
+		}...)
+
+	println(orderStateMachine.Show())
+
+	orderStateMachine.Processor(&OrderEventProcessor{})
+
+	order := context.WithValue(context.TODO(), "data", "order object data")
+	state, err := orderStateMachine.Trigger(order, Start, CreateEvent)
+	println(fmt.Sprintf("====: %v : %v", state, err))
+
+	state, err = orderStateMachine.Trigger(order, Start, PayEvent)
+	println(fmt.Sprintf("====: %v : %v", state, err))
+
+	state, err = orderStateMachine.Trigger(order, Paying, PayFailureEvent)
+	println(fmt.Sprintf("====: %v : %v", state, err))
 }
 
 func BenchmarkStateMachine_Trigger(b *testing.B) {
