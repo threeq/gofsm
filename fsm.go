@@ -34,6 +34,8 @@ type Transition struct {
 */
 type stateGraph struct {
 	name        string // 状态图名称
+	start       []State
+	end         []State
 	states      StatesDef
 	events      EventsDef
 	transitions map[State]map[Event]*Transition
@@ -70,9 +72,10 @@ func (*DefaultProcessor) OnEnter(ctx context.Context, state State) error {
 /**
 默认值定义
 */
-var Start = "[*]"
-var End = "[*]"
-var None = ""
+const Start = "[*]"
+const End = "[*]"
+const None = ""
+
 var NoopAction Action = func(ctx context.Context, from State, event Event, to []State) (State, error) {
 	if to == nil || len(to) == 0 {
 		return None, nil
@@ -109,6 +112,16 @@ func (sm *stateMachine) Events(events EventsDef) *stateMachine {
 
 func (sm *stateMachine) Name(s string) *stateMachine {
 	sm.sg.name = s
+	return sm
+}
+
+func (sm *stateMachine) Start(start []State) *stateMachine {
+	sm.sg.start = start
+	return sm
+}
+
+func (sm *stateMachine) End(end []State) *stateMachine {
+	sm.sg.end = end
 	return sm
 }
 
@@ -157,10 +170,10 @@ func removeDuplicatesAndEmpty(a []State) (ret []State) {
 */
 func (sm *stateMachine) Trigger(ctx context.Context, from State, event Event) (State, error) {
 	if _, ok := sm.sg.states[from]; !ok {
-		return "", errors.New("状态机不包含状态")
+		return "", errors.New("状态机不包含状态" + from)
 	}
 	if _, ok := sm.sg.events[event]; !ok {
-		return "", errors.New("状态机不包含事件")
+		return "", errors.New("状态机不包含事件 " + event)
 	}
 	if transfer, ok := sm.sg.transitions[from][event]; ok {
 
@@ -186,7 +199,7 @@ func (sm *stateMachine) Trigger(ctx context.Context, from State, event Event) (S
 
 		return to, err
 	}
-	return "", errors.New("没有定义状态转换事件")
+	return "", errors.New(fmt.Sprintf("没有定义状态转换事件 [%v --%v--> ???]", from, event))
 
 }
 
@@ -217,7 +230,7 @@ func (sg *stateGraph) show() string {
 	for state, desc := range sg.states {
 		stateLine := string(state)
 		if desc != "" {
-			stateLine = fmt.Sprintf("%s:%s", state, desc)
+			stateLine = fmt.Sprintf("%s: %s", state, desc)
 		}
 
 		stateLines = append(stateLines, stateLine)
@@ -226,6 +239,16 @@ func (sg *stateGraph) show() string {
 
 	// 状态转换描述
 	var transferLines []string
+	// 开始状态处理
+	if sg.start != nil && len(sg.start) > 0 {
+		for _, event := range sg.start {
+			transferLines = append(transferLines,
+				fmt.Sprintf("%s --> %s",
+					Start,
+					event))
+		}
+	}
+	// 处理中间状态转换
 	for from, events := range sg.transitions {
 		for event, transfer := range events {
 			if event != "" {
@@ -248,6 +271,15 @@ func (sg *stateGraph) show() string {
 						to,
 						event))
 			}
+		}
+	}
+	// 结束状态处理
+	if sg.end != nil && len(sg.end) > 0 {
+		for _, event := range sg.end {
+			transferLines = append(transferLines,
+				fmt.Sprintf("%s --> %s",
+					event,
+					End))
 		}
 	}
 	transitionsDef := strings.Join(transferLines, "\n")
