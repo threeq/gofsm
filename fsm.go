@@ -3,7 +3,6 @@ package gofsm
 import (
 	"context"
 	"fmt"
-	"log"
 	"qiniupkg.com/x/errors.v7"
 	"sort"
 	"strings"
@@ -54,17 +53,17 @@ type stateMachine struct {
 type DefaultProcessor struct{}
 
 func (*DefaultProcessor) OnExit(ctx context.Context, state State, event Event) error {
-	log.Printf("exit [%s]", state)
+	//log.Printf("exit [%s]", state)
 	return nil
 }
 
 func (*DefaultProcessor) OnActionFailure(ctx context.Context, from State, event Event, to []State, err error) error {
-	log.Printf("failure %s -(%s)-> [%s]: (%s)", from, event, strings.Join(to, "|"), err.Error())
+	//log.Printf("failure %s -(%s)-> [%s]: (%s)", from, event, strings.Join(to, "|"), err.Error())
 	return nil
 }
 
 func (*DefaultProcessor) OnEnter(ctx context.Context, state State) error {
-	log.Printf("enter [%s]", state)
+	//log.Printf("enter [%s]", state)
 	return nil
 }
 
@@ -75,7 +74,7 @@ var Start = "[*]"
 var End = "[*]"
 var None = ""
 var NoopAction Action = func(ctx context.Context, from State, event Event, to []State) (State, error) {
-	if to == nil && len(to) == 0 {
+	if to == nil || len(to) == 0 {
 		return None, nil
 	}
 	return to[0], nil
@@ -155,9 +154,6 @@ func removeDuplicatesAndEmpty(a []State) (ret []State) {
 
 /**
 触发状态转换
-TODO 多线程安全
-TODO 支持异步处理
-TODO 支持分布式
 */
 func (sm *stateMachine) Trigger(ctx context.Context, from State, event Event) (State, error) {
 	if _, ok := sm.sg.states[from]; !ok {
@@ -178,7 +174,7 @@ func (sm *stateMachine) Trigger(ctx context.Context, from State, event Event) (S
 		}
 
 		_ = processor.OnExit(ctx, from, event)
-		// TODO action 执行异常处理
+
 		to, err := transfer.Action(ctx, from, event, transfer.To)
 		if err != nil {
 			// 转换执行错误处理
@@ -233,8 +229,8 @@ func (sg *stateGraph) show() string {
 	for from, events := range sg.transitions {
 		for event, transfer := range events {
 			if event != "" {
-				event = "(" + string(event) + ") "
 				desc := sg.events[event]
+				event = "(" + string(event) + ") "
 				if desc != "" {
 					event += desc
 				}

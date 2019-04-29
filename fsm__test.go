@@ -45,9 +45,12 @@ func Test_stateMachine_Show(t *testing.T) {
 			"Sample",
 			StatesDef{
 				"s1": "stat 1",
-				"s2": "stat 2",
+				"s2": "",
 			},
-			nil,
+			EventsDef{
+				"Start":   "start",
+				"Execute": "",
+			},
 			[]Transition{
 				{Start, "Start", []State{"s1"}, NoopAction, nil},
 				{Start, None, []State{"s2"}, NoopAction, nil},
