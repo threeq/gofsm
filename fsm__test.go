@@ -40,7 +40,7 @@ func Test_stateMachine_Show(t *testing.T) {
 			nil,
 			nil,
 			[]Transition{},
-		}, `State Graph`},
+		}, `<<DFA>>`},
 		{"Sample State Graph", fields{
 			"Sample",
 			StatesDef{
@@ -58,7 +58,7 @@ func Test_stateMachine_Show(t *testing.T) {
 				{"s2", "Execute", []State{End, "33"}, NoopAction, NoopProcessor},
 				{"s2", "SS", []State{End, "11", "22"}, NoopAction, nil},
 			},
-		}, `State "[Sample] State Graph" as rootGraph`},
+		}, `state "s2" as s2 <<NFA>>`},
 	}
 
 	for _, tt := range tests {

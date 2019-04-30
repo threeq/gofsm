@@ -132,6 +132,7 @@ func (sm *stateMachine) Processor(processor EventProcessor) *stateMachine {
 
 /**
 添加状态转换
+TODO 不确定状态机，多个 Action 如何处理 ？？？
 */
 func (sm *stateMachine) Transitions(transitions ...Transition) *stateMachine {
 	for index := range transitions {
@@ -194,6 +195,8 @@ func (sm *stateMachine) Trigger(ctx context.Context, from State, event Event) (S
 			_ = processor.OnActionFailure(ctx, from, event, transfer.To, err)
 			return to, err
 		}
+		// TODO 返回状态不在状态表中如何处理 ？？？
+
 		// 进入状态处理，转换之后
 		_ = processor.OnEnter(ctx, to)
 
@@ -222,15 +225,27 @@ func (transfer Transition) String() string {
 func (sg *stateGraph) show() string {
 	// 头部信息
 	title := ""
+	smType := "DFA"
 	if sg.name != "" {
-		title = "[" + sg.name + "] "
+		title = "<b>[" + sg.name + "]</b> "
 	}
+
 	// 状态的定义
 	var stateLines []string
 	for state, desc := range sg.states {
 		stateLine := string(state)
+
+		nextNFA := ""
+		for _, transfer := range sg.transitions[state] {
+			if len(transfer.To) > 1 {
+				nextNFA = "<<NFA>>"
+			}
+		}
+
 		if desc != "" {
-			stateLine = fmt.Sprintf("%s: %s", state, desc)
+			stateLine = fmt.Sprintf(`state "%s" as %s %s :%s`, state, state, nextNFA, desc)
+		} else {
+			stateLine = fmt.Sprintf(`state "%s" as %s %s`, state, state, nextNFA)
 		}
 
 		stateLines = append(stateLines, stateLine)
@@ -251,11 +266,17 @@ func (sg *stateGraph) show() string {
 	// 处理中间状态转换
 	for from, events := range sg.transitions {
 		for event, transfer := range events {
+			if len(transfer.To) > 1 {
+				smType = "NFA"
+			}
 			if event != "" {
 				desc := sg.events[event]
 				event = "(" + string(event) + ") "
 				if desc != "" {
-					event += desc
+					event = event + desc
+				}
+				if len(transfer.To) > 1 {
+					event = "<font color=red><b>" + event + "</b></font>"
 				}
 			}
 			// plantUml 格式
@@ -287,8 +308,10 @@ func (sg *stateGraph) show() string {
 	// 生成 plantUml script
 	raw := `
 	@startuml
-	
-	State "` + title + `State Graph" as rootGraph {
+	skinparam state {
+	  BackgroundColor<<NFA>> Red
+	}
+	State "<font color=red><b><<%s>></b></font>\n` + title + `State Graph" as rootGraph {
 		%s
 
 		%s
@@ -296,7 +319,7 @@ func (sg *stateGraph) show() string {
 
 	@enduml
 	`
-	raw = fmt.Sprintf(raw, statesDef, transitionsDef)
+	raw = fmt.Sprintf(raw, smType, statesDef, transitionsDef)
 
 	// 输出 plantUml 和 在线生成图标地址
 	plantText := encode(raw)
