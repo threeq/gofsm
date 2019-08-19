@@ -10,9 +10,9 @@ import (
 
 type State = string
 type Event = string
+type Action func(ctx context.Context, from State, event Event, to []State) (State, error)
 type StatesDef map[State]string
 type EventsDef map[Event]string
-type Action func(ctx context.Context, from State, event Event, to []State) (State, error)
 type EventProcessor interface {
 	OnExit(ctx context.Context, state State, event Event) error
 	OnActionFailure(ctx context.Context, from State, event Event, to []State, err error) error
