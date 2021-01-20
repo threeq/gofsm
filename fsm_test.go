@@ -45,8 +45,8 @@ func TestStateMachine_Show(t *testing.T) {
 
 	raw := testMachine().Show()
 	println(raw)
-	goassert.New(t).That(raw).Contains("F(s1 = e1<Any>) -> s2；")
-	goassert.New(t).That(raw).Contains("F(s2 = e2<Any>) -> s3；")
+	goassert.New(t).That(raw).Contains("F(s1 = e1<Any>) -> s2")
+	goassert.New(t).That(raw).Contains("F(s2 = e2<Any>) -> s3")
 }
 
 func TestStateMachine_Trigger(t *testing.T) {

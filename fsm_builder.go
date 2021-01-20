@@ -19,7 +19,7 @@ func (owner *Builder) Build(machineID string, options ...Option) *StateMachine {
 				From:     s1,
 				To:       cfg.to,
 				Event:    cfg.event,
-				CondDesc: cfg.desc,
+				CondDesc: cfg.condDesc,
 				Cond:     cfg.condition,
 				Action:   cfg.action,
 			})
@@ -41,13 +41,14 @@ func NewBuilder() *Builder {
 }
 
 type transCfg struct {
-	from      []State
-	to        State
-	event     Event
-	condition Condition
-	desc      string
-	action    Action
-	builder   *Builder
+	from       []State
+	to         State
+	event      Event
+	condition  Condition
+	action     Action
+	builder    *Builder
+	actionDesc string
+	condDesc   string
 }
 
 type transition struct {
@@ -70,15 +71,16 @@ type stateEventWhenAction struct {
 	*transCfg
 }
 
-func (owner *stateEventWhenAction) Action(action Action) *Builder {
+func (owner *stateEventWhenAction) Action(desc string, action Action) *Builder {
 	owner.action = action
+	owner.actionDesc = desc
 	owner.builder.addTransition(owner.transCfg)
 	return owner.builder
 }
 
 func (owner *stateEventWhen) When(desc string, cond Condition) *stateEventWhenAction {
 	owner.condition = cond
-	owner.desc = desc
+	owner.condDesc = desc
 	return &stateEventWhenAction{
 		transCfg: owner.transCfg,
 	}
@@ -104,4 +106,3 @@ func (owner *transition) From(from ...State) *state {
 		transCfg: owner.transCfg,
 	}
 }
-
