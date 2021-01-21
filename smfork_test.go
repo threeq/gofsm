@@ -8,19 +8,19 @@ import (
 )
 
 var (
-	ok1 = State("ok1").Entry(func(ctx context.Context, entity Entity, from, to IState) error {
+	ok1 = State("ok1").Entry("",func(ctx context.Context, entity Entity, from, to IState) error {
 		return nil
 	})
-	ok2 = State("ok1").Entry(func(ctx context.Context, entity Entity, from, to IState) error {
+	ok2 = State("ok1").Entry("",func(ctx context.Context, entity Entity, from, to IState) error {
 		return nil
 	})
-	err1 = State("err1").Entry(func(ctx context.Context, entity Entity, from, to IState) error {
+	err1 = State("err1").Entry("",func(ctx context.Context, entity Entity, from, to IState) error {
 		return errors.New("err1")
 	})
-	ok3 = State("ok1").Entry(func(ctx context.Context, entity Entity, from, to IState) error {
+	ok3 = State("ok1").Entry("",func(ctx context.Context, entity Entity, from, to IState) error {
 		return nil
 	})
-	err2 = State("err2").Entry(func(ctx context.Context, entity Entity, from, to IState) error {
+	err2 = State("err2").Entry("",func(ctx context.Context, entity Entity, from, to IState) error {
 		return errors.New("err2")
 	})
 )

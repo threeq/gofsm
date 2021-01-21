@@ -17,16 +17,8 @@ func (o *Builder) Build(machineID string, options ...Option) *StateMachine {
 	sm.Name = machineID
 	for _, cfg := range o.transitions {
 		for _, s1 := range cfg.from {
-			//&Transition{
-			//	From:     s1,
-			//	To:       cfg.to,
-			//	Event:    cfg.event,
-			//	CondDesc: cfg.condDesc,
-			//	Cond:     cfg.condition,
-			//	Action:   cfg.action,
-			//}
-			sm.Trans(s1.Exit(cfg.event, cfg.condition),
-				cfg.to.Entry(cfg.action))
+			sm.Trans(s1.Exit(cfg.event, cfg.condDesc, cfg.condition),
+				cfg.to.Entry(cfg.actionDesc, cfg.action))
 		}
 	}
 
@@ -34,6 +26,10 @@ func (o *Builder) Build(machineID string, options ...Option) *StateMachine {
 
 	o.transitions = []*transCfg{}
 	return sm
+}
+
+func (o *Builder) DSL(dsl string) {
+	//TODO DSL 支持
 }
 
 func (o *Builder) addTransition(trans *transCfg) {

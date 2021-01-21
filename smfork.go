@@ -3,43 +3,81 @@ package gosm
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
 
-func Fork(executor Executor, stateEntries ...StateEntry) StateEntry {
-	return &forkStateEntry{
-		stateEntries: stateEntries,
-		executor:     executor,
-	}
-}
-
 type SuccessStrategy = func(ctx context.Context, entity Entity, from IState, stateEntries []StateEntry) (func() error, func(err error) bool)
 type Executor = func(ctx context.Context, entity Entity, from IState, stateEntries []StateEntry) error
 
-type forkStateEntry struct {
+type ForkStateExit struct {
+	exit    *StateExit
+	machine *StateMachine
+}
+
+func (o *ForkStateExit) Link(executor Executor, stateEntries ...StateEntry) {
+	entry := &comboStateEntry{
+		machine:      o.machine,
+		stateEntries: stateEntries,
+		executor:     executor,
+	}
+	forkID := fmt.Sprintf("%v_%v_fork", o.exit.state.ID(), o.exit.event)
+	fork := State(forkID, "fork")
+	fork.Bind(o.machine)
+
+	o.machine.Trans(o.exit, entry)
+}
+
+type comboStateEntry struct {
 	state        IState
+	machine      *StateMachine
 	action       Action
 	desc         string
 	stateEntries []StateEntry
 	executor     Executor
 }
 
-func (f *forkStateEntry) State() IState {
-	if f.state == nil {
-		f.state = State("Fork")
+func (o *comboStateEntry) State() IState {
+	if o.state == nil {
+		o.state = State("Fork")
 	}
-	return f.state
+	return o.state
 }
 
-func (f *forkStateEntry) Action(ctx context.Context, entity Entity, from, to IState) error {
-	return f.executor(ctx, entity, from, f.stateEntries)
+func (o *comboStateEntry) Action(ctx context.Context, entity Entity, from, to IState) error {
+	return o.executor(ctx, entity, from, o.stateEntries)
 }
 
-func (f *forkStateEntry) Desc() string {
-	// TODO desc
-	return f.desc
+func (o *comboStateEntry) Desc() string {
+	return "Fork"
+}
+
+func (o *comboStateEntry) Graph(exit *StateExit) (string, string) {
+	if len(o.stateEntries) == 1 {
+		return o.stateEntries[0].Graph(exit)
+	} else {
+		var lines []string
+		var machines []string
+		forkID := fmt.Sprintf("%v_%v_fork", exit.state.ID(), exit.event)
+		fork := State(forkID)
+		m, line := fork.Entry("").Graph(exit)
+		if m != "" {
+			machines = append(machines, m)
+		}
+		lines = append(lines, line)
+		forkExit := fork.Exit(exit.event, exit.desc)
+		for _, entry := range o.stateEntries {
+			m, line := entry.Graph(forkExit)
+			if m != "" {
+				machines = append(machines, m)
+			}
+			lines = append(lines, line)
+		}
+		return strings.Join(machines, "\n"), strings.Join(lines, "\n")
+	}
 }
 
 func Serial(successStrategy SuccessStrategy) Executor {
