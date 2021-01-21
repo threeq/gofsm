@@ -13,4 +13,4 @@
 ## 使用
 
 
-完整代码查看 https://github.com/threeq/gofsm/blob/master/fsm_test.go 中 `TestStateMachine_Example_Order`
+完整代码查看 https://github.com/threeq/gofsm/blob/master/sm_test.go 中 `TestStateMachine_Example_Order`
