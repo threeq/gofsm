@@ -5,10 +5,10 @@
 ## TODO
 
 * 简单状态机 FSM
-* 条件选择
-* 层次状态机/子状态机 HSM
-* 状态的嵌套
-* 状态的并行（parallel，fork，join）
+* 条件选择（choice）
+* 层次状态机/子状态机/状态嵌套 HSM
+* 状态的并行（fork，parallel）
+* ~~join~~
 
 ## 使用
 
