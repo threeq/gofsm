@@ -6,7 +6,7 @@ import (
 )
 
 func TestState_ID(t *testing.T) {
-	m := NewMachine()
+	m := NewMachine("TestState_ID")
 	s1 := m.State("1")
 	s2 := m.State("1")
 	goassert.That(t, s1.ID()).Equal(s2.ID())

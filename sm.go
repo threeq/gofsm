@@ -137,8 +137,8 @@ func (o *StateMachine) end(actions ...Action) StateEntry {
 }
 
 //Graph
-// TODO 支持嵌套、fork
-// choice 显示
+// TODO 支持嵌套
+// choice、fork 显示
 // Text Graph:
 //      F(state = Condition1) -> NewState1 : Action1;
 //      F(state = Condition2) -> NewState2 : Action2;
@@ -231,8 +231,9 @@ func (o *StateMachine) Show() {
 }
 
 //---------------------------------------------------------------------------------
-func NewMachine(options ...Option) *StateMachine {
+func NewMachine(name string, options ...Option) *StateMachine {
 	sm := &StateMachine{
+		Name:        name,
 		transitions: make(map[interface{}]map[Event][]*ConditionLinker),
 		states:      make(map[interface{}]IState),
 		filter:      NoopFilter,
@@ -240,6 +241,7 @@ func NewMachine(options ...Option) *StateMachine {
 	for _, option := range options {
 		option(sm)
 	}
+	stateMachines[sm.Name] = sm
 	return sm
 }
 

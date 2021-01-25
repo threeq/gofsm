@@ -9,14 +9,14 @@ import (
 
 func TestStateMachine_Show(t *testing.T) {
 
-	m1 := NewMachine()
+	m1 := NewMachine("m1")
 	m1.Name = "m1"
 	m1s1 := m1.State(11)
 	m1s2 := m1.State(12)
 	m1e1 := Event(11)
 	m1e2 := Event(12)
 
-	m2 := NewMachine()
+	m2 := NewMachine("m2")
 	m2.Name = "m2"
 	s1 := State(1)
 	s2 := State(2)
@@ -70,8 +70,7 @@ func testMachine() *StateMachine {
 		return nil
 	}
 
-	sm := NewMachine()
-	sm.Name = "xxx"
+	sm := NewMachine("xxx")
 	sm.Trans(State("s1").Exit("e1", ""), State("s2").Entry("", e1Action))
 	sm.Trans(State("s2").Exit("e2", "Any", Any), State("s3").Entry("", e1Action))
 	sm.Trans(State("s3").Exit("e2", "always", Any), State("s3").Entry("", e1Action))

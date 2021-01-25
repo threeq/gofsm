@@ -13,8 +13,7 @@ func (o *Builder) Transition() *transition {
 }
 
 func (o *Builder) Build(machineID string, options ...Option) *StateMachine {
-	sm := NewMachine(options...)
-	sm.Name = machineID
+	sm := NewMachine(machineID, options...)
 	for _, cfg := range o.transitions {
 		for _, s1 := range cfg.from {
 			sm.Trans(s1.Exit(cfg.event, cfg.condDesc, cfg.condition),
